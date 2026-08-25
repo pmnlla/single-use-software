@@ -1,0 +1,14 @@
+services:
+  tailscale-monitor:
+    image: ghcr.io/pmnlla/tailscale-monitor:latest
+    build: .
+    restart: unless-stopped
+    environment:
+      - 'TAILSCALE_API_KEY=${TAILSCALE_API_KEY}'
+      - 'TAILSCALE_TAG=${TAILSCALE_TAG}'
+      - 'CHECK_FREQUENCY=${CHECK_FREQUENCY:-30}'
+      - 'REPORT_IF_MISSING_AFTER=${REPORT_IF_MISSING_AFTER:-3}'
+      - 'NTFY_CHANNEL=${NTFY_CHANNEL:}'
+      - 'NTFY_SERVER=${NTFY_SERVER:-ntfy.sh}'
+      - 'NTFY_API_KEY=${NTFY_API_KEY:-not-required}'
+      - 'NTFY_INSECURE=${NTFY_INSECURE:-true}'
