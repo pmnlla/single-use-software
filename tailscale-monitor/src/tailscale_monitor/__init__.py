@@ -1,6 +1,6 @@
 import sys, os, time, ssl
-from dotenv import dotenv_values
-config: dict[str, str | None ] = dotenv_values(".env") 
+from dotenv import load_dotenv
+load_dotenv()
 
 import json, jq
 from dataclasses import dataclass, asdict
@@ -19,11 +19,11 @@ class Device:
     name: str
     connectedToControl: bool
     notified: bool = False
-    checksUntilNotify: int = int(config["REPORT_IF_MISSING_AFTER"]) if config["REPORT_IF_MISSING_AFTER"] else 5
+    checksUntilNotify: int = int(os.getenv("REPORT_IF_MISSING_AFTER")) if os.getenv("REPORT_IF_MISSING_AFTER") else 5
 
 import http.client
 ts_headers: dict[str, str] = {
-  "Authorization": f"Bearer {config["TAILSCALE_API_KEY"]}"
+  "Authorization": f"Bearer {os.getenv("TAILSCALE_API_KEY")}"
 }
 
 def tailscale_get_status() -> list[Device]:
@@ -43,19 +43,19 @@ def tailscale_get_status() -> list[Device]:
     if response.status != 200:
         raise RuntimeError(f"Tailscale API returned {response.status}: {body[:200]}")
 
-    rule = jq.compile('.devices[] | select(.tags != null and (.tags| any(. == "tag:\\($tagname)"))) | {id, name, connectedToControl}', args={"tagname": config["TAILSCALE_TAG"]})
+    rule = jq.compile('.devices[] | select(.tags != null and (.tags| any(. == "tag:\\($tagname)"))) | {id, name, connectedToControl}', args={"tagname": os.getenv("TAILSCALE_TAG")})
     data = json.loads(body)
     result = [Device(**item) for item in rule.input_value(data).all()]
 
     return result
 
-ntfy_server: str = (config["NTFY_SERVER"] or "ntfy.sh").removeprefix("https://").removesuffix("/")
+ntfy_server: str = (os.getenv("NTFY_SERVER") or "ntfy.sh").removeprefix("https://").removesuffix("/")
 ntfy_headers: dict[str, str] = {
-      "Authorization": f"Bearer {config["NTFY_API_KEY"]}",
+      "Authorization": f"Bearer {os.getenv("NTFY_API_KEY")}",
       "Title": "Camera Offline!",
       "Priority": "High"
 }
-if config.get("NTFY_INSECURE") == "true":
+if os.getenv("NTFY_INSECURE") == "true":
     ntfy_context = ssl.create_default_context()
     ntfy_context.check_hostname = False
     ntfy_context.verify_mode = ssl.CERT_NONE
@@ -67,7 +67,7 @@ def notifyOfDeadDevice(name: str) -> None:
     try:
         ntfy.request(
         "POST",
-        f"/{config["NTFY_CHANNEL"]}",
+        f"/{os.getenv("NTFY_CHANNEL")}",
         headers=ntfy_headers,
         body=f"{name} has been offline for several check cycles."
         )      
@@ -90,8 +90,8 @@ def main() -> None:
     last_state = tailscale_get_status()
     logging.debug(json.dumps([asdict(device) for device in last_state], indent=2))
 
-    timeToSleep: int = int(config["CHECK_FREQUENCY"]) if config["CHECK_FREQUENCY"] else 30
-    checksUntilNotify: int = int(config["REPORT_IF_MISSING_AFTER"]) if config["REPORT_IF_MISSING_AFTER"] else 3
+    timeToSleep: int = int(os.getenv("CHECK_FREQUENCY")) if os.getenv("CHECK_FREQUENCY") else 30
+    checksUntilNotify: int = int(os.getenv("REPORT_IF_MISSING_AFTER")) if os.getenv("REPORT_IF_MISSING_AFTER") else 3
     while True:
         logging.info(f"Sleeping {timeToSleep}s...")
         time.sleep(timeToSleep)
