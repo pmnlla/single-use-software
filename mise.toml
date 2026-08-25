@@ -1,0 +1,10 @@
+[tools]
+python = "3.12"
+uv = "latest"
+node = "22"
+"npm:fern-api" = "latest"
+gum = "latest"
+
+[settings]
+# have mise source/create the uv-managed .venv when a uv.lock is present
+python.uv_venv_auto = "create|source"

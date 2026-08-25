@@ -1,0 +1,23 @@
+[project]
+name = "tailscale-monitor"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "dotenv>=0.9.9",
+    "jq>=1.12.0",
+    "rich>=15.0.0",
+]
+
+[project.scripts]
+tailscale-monitor = "tailscale_monitor:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.pyrefly]
+project-includes = ["src"]
+python-interpreter-path = ".venv/bin/python3"
+ignore-missing-imports = ["jq"]
