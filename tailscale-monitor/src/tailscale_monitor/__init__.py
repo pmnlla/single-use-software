@@ -13,13 +13,17 @@ logging.basicConfig(
     level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 
+def env_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    return int(value) if value else default
+
 @dataclass
 class Device:
     id: str
     name: str
     connectedToControl: bool
     notified: bool = False
-    checksUntilNotify: int = int(os.getenv("REPORT_IF_MISSING_AFTER")) if os.getenv("REPORT_IF_MISSING_AFTER") else 5
+    checksUntilNotify: int = env_int("REPORT_IF_MISSING_AFTER", 5)
 
 import http.client
 ts_headers: dict[str, str] = {
@@ -90,8 +94,8 @@ def main() -> None:
     last_state = tailscale_get_status()
     logging.debug(json.dumps([asdict(device) for device in last_state], indent=2))
 
-    timeToSleep: int = int(os.getenv("CHECK_FREQUENCY")) if os.getenv("CHECK_FREQUENCY") else 30
-    checksUntilNotify: int = int(os.getenv("REPORT_IF_MISSING_AFTER")) if os.getenv("REPORT_IF_MISSING_AFTER") else 3
+    timeToSleep: int = env_int("CHECK_FREQUENCY", 30)
+    checksUntilNotify: int = env_int("REPORT_IF_MISSING_AFTER", 3)
     while True:
         logging.info(f"Sleeping {timeToSleep}s...")
         time.sleep(timeToSleep)
